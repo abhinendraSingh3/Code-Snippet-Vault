@@ -1,32 +1,31 @@
+//for list views — lighter version without code (useful for "list all my snippets" endpoint where you don't want to send full code every time
+
 package com.personalProject.codeVault.dto;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
-
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SnippetResponseDTO
-{
+public class SnippetSummaryDTO {
+
     private Long id;
 
     private String title;
 
-    private String description;
-
-    private String code;
-
     private String language;
 
-    private List<String> tags;
+    private String description;
 
-    private String shareToken;
+    private List<String> tags;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+
 
 }

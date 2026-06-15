@@ -1,6 +1,9 @@
 package com.personalProject.codeVault.repository;
+import com.personalProject.codeVault.model.Snippet;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface SnippetRepository extends JpaRepository {
+@Repository
+public interface SnippetRepository extends JpaRepository<Snippet, Long> {
     
 }

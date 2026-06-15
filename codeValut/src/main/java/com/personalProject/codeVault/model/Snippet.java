@@ -1,10 +1,8 @@
 package com.personalProject.codeVault.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,7 +11,7 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class Snippet {
 
     @Id
@@ -24,7 +22,6 @@ public class Snippet {
     private String title;
 
     @Lob
-    @Column()
     private String description;
 
     @Lob
@@ -34,14 +31,15 @@ public class Snippet {
     @Column(nullable = false)
     private String language;
 
+    @ElementCollection
     private List<String> tags;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
-    private boolean isPublic;
 
+    @Column(unique = true)
     private String shareToken;
 
     @PrePersist
