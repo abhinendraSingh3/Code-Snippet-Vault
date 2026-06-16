@@ -3,14 +3,18 @@ package com.personalProject.codeVault.service;
 import com.personalProject.codeVault.dto.SnippetRequestDTO;
 import com.personalProject.codeVault.dto.SnippetResponseDTO;
 import com.personalProject.codeVault.dto.SnippetSummaryDTO;
+import com.personalProject.codeVault.exception.ResourceNotFoundException;
 import com.personalProject.codeVault.model.Snippet;
 import com.personalProject.codeVault.repository.SnippetRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
 
+
+@Transactional
 @Service
 @RequiredArgsConstructor
 public class SnippetServiceImpl implements SnippetService {
@@ -23,25 +27,28 @@ public class SnippetServiceImpl implements SnippetService {
 
     @Override
     public SnippetResponseDTO createSnippet(SnippetRequestDTO request) {
-        Snippet snippet=new Snippet();
 
-        //saving the data from the request to the snippet
+        Snippet snippet = new Snippet();
+
         snippet.setTitle(request.getTitle());
         snippet.setDescription(request.getDescription());
         snippet.setCode(request.getCode());
         snippet.setLanguage(request.getLanguage());
         snippet.setTags(request.getTags());
 
+        Snippet savedSnippet = snippetRepository.save(snippet);
 
-        //saving the data in the db with the help of repository
-       Snippet snippetSavedResponse= snippetRepository.save(snippet);
+        SnippetResponseDTO response = new SnippetResponseDTO();
 
-       //convert the snippet data in to responseDTO
-        SnippetResponseDTO response=new SnippetResponseDTO();
-        response.setId(snippet.getId());
-        response.setTitle(snippet.getTitle());
-        response.setDescription((snippet.getDescription()));
-        response.setLanguage(snippet.getLanguage());
+        response.setId(savedSnippet.getId());
+        response.setTitle(savedSnippet.getTitle());
+        response.setDescription(savedSnippet.getDescription());
+        response.setCode(savedSnippet.getCode());
+        response.setLanguage(savedSnippet.getLanguage());
+        response.setTags(savedSnippet.getTags());
+        response.setShareToken(savedSnippet.getShareToken());
+        response.setCreatedAt(savedSnippet.getCreatedAt());
+        response.setUpdatedAt(savedSnippet.getUpdatedAt());
 
         return response;
     }
@@ -50,7 +57,7 @@ public class SnippetServiceImpl implements SnippetService {
     public SnippetResponseDTO getSnippetById(Long id) {
         Snippet snippet =snippetRepository
                 .findById(id)
-                .orElseThrow(()->new RuntimeException("Snippet not found by given id"));
+                .orElseThrow(()->new ResourceNotFoundException("Snippet not found by given id"));
 
         SnippetResponseDTO response=new SnippetResponseDTO();
 
@@ -121,6 +128,8 @@ public class SnippetServiceImpl implements SnippetService {
             snippet.setTags(request.getTags());
         }
 
+        snippetRepository.save(snippet);
+
         SnippetResponseDTO response=new SnippetResponseDTO();
 
         response.setId(snippet.getId());
@@ -134,13 +143,89 @@ public class SnippetServiceImpl implements SnippetService {
         response.setUpdatedAt(snippet.getUpdatedAt());
 
         return response;
-        return ;
     }
 
     @Override
     public void deleteSnippet(Long id) {
-
+        Snippet snippet=snippetRepository
+                .findById(id)
+                .orElseThrow(()->new RuntimeException("Snippet not found by the given id"));
+        System.out.println("snippet found by given id"+snippet+"now proceeding to delete");
+        snippetRepository.deleteById(id);
+        System.out.println("deleted Successfully");
     }
+
+
+    public List<SnippetSummaryDTO> getByLanguage(String language){
+        List <Snippet> snippet = snippetRepository.findByLanguage(language);
+
+    List<SnippetSummaryDTO> responses=new ArrayList<>();
+
+        for(Snippet items:snippet){
+            SnippetSummaryDTO response=new SnippetSummaryDTO();
+            response.setId(items.getId());
+            response.setTitle(items.getTitle());
+            response.setLanguage(items.getLanguage());
+            response.setDescription(items.getDescription());
+            response.setTags(items.getTags());
+            response.setCreatedAt(items.getCreatedAt());
+            response.setUpdatedAt(items.getUpdatedAt());
+
+            responses.add(response);
+        }
+        return responses;
+//-------------------or--------------
+//        return snippetRepository.findByLanguage(language)
+//                .stream()
+//                .map(item->{
+//                    SnippetSummaryDTO dto=new SnippetSummaryDTO();
+//                    dto.setId(item.getId());
+//                    dto.setTitle(item.getTitle());
+//                    dto.setLanguage(item.getLanguage());
+//                    dto.setDescription(item.getDescription());
+//                    dto.setTags(item.getTags());
+//                    dto.setCreatedAt(item.getCreatedAt());
+//                    dto.setUpdatedAt(item.getUpdatedAt());
+//                    return dto;
+//
+//                }).toList();
+    }
+
+    //----GET BY TITLE------------------------
+    public List<SnippetSummaryDTO> getByTitle(String title){
+
+        return snippetRepository.findByTitleContainingIgnoreCase(title)
+                .stream()
+                .map(item->{
+                    SnippetSummaryDTO dto=new SnippetSummaryDTO();
+                    dto.setId(item.getId());
+                    dto.setTitle(item.getTitle());
+                    dto.setLanguage(item.getLanguage());
+                    dto.setDescription(item.getDescription());
+                    dto.setTags(item.getTags());
+                    dto.setCreatedAt(item.getCreatedAt());
+                    dto.setUpdatedAt(item.getUpdatedAt());
+                    return dto;
+                }).toList();
+    }
+
+    public List<SnippetSummaryDTO> getByTitleOrLanguage(String keyword){
+        return snippetRepository
+                .findByTitleContainingIgnoreCaseOrLanguageContainingIgnoreCase(keyword,keyword)
+                .stream()
+                .map(item->{
+                    SnippetSummaryDTO dto=new SnippetSummaryDTO();
+                    dto.setId(item.getId());
+                    dto.setTitle(item.getTitle());
+                    dto.setLanguage(item.getLanguage());
+                    dto.setDescription(item.getDescription());
+                    dto.setTags(item.getTags());
+                    dto.setCreatedAt(item.getCreatedAt());
+                    dto.setUpdatedAt(item.getUpdatedAt());
+                    return dto;
+                }).toList();
+    }
+
 
 
 }

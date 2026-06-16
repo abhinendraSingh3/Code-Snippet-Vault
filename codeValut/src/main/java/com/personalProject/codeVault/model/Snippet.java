@@ -31,7 +31,7 @@ public class Snippet {
     @Column(nullable = false)
     private String language;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER) //tags = lazy collection (default)
     private List<String> tags;
 
     private LocalDateTime createdAt;
