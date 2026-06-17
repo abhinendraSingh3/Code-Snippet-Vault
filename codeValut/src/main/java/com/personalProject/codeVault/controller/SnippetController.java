@@ -5,8 +5,9 @@
     import com.personalProject.codeVault.dto.SnippetResponseDTO;
     import com.personalProject.codeVault.dto.SnippetSummaryDTO;
     import com.personalProject.codeVault.service.SnippetService;
-    import jakarta.transaction.Transactional;
+
     import jakarta.validation.Valid;
+    import org.springframework.data.domain.Page;
     import org.springframework.web.bind.annotation.*;
 
     import java.util.List;
@@ -23,9 +24,8 @@
 
         //get/snippets-this gives summary of all snippets
         @GetMapping
-            public List<SnippetSummaryDTO> getAllSnippets() {
-            return snippetService.getAllSnippets();
-
+            public Page<SnippetSummaryDTO> getAllSnippets(@RequestParam (defaultValue = "0") int page) {
+            return snippetService.getAllSnippets(page);
         }
         //post/snippets-create new snippet
         @PostMapping

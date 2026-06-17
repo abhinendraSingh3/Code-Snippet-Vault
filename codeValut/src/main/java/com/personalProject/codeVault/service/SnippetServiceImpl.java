@@ -1,5 +1,4 @@
 package com.personalProject.codeVault.service;
-
 import com.personalProject.codeVault.dto.SnippetRequestDTO;
 import com.personalProject.codeVault.dto.SnippetResponseDTO;
 import com.personalProject.codeVault.dto.SnippetSummaryDTO;
@@ -8,8 +7,10 @@ import com.personalProject.codeVault.model.Snippet;
 import com.personalProject.codeVault.repository.SnippetRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,34 +76,24 @@ public class SnippetServiceImpl implements SnippetService {
     }
 
     @Override
-    public List<SnippetSummaryDTO> getAllSnippets() {
+    public Page<SnippetSummaryDTO> getAllSnippets(int page) {
+        Pageable pageable= PageRequest.of(page,5);
 
-        List <Snippet> snippets=snippetRepository.findAll();
+        Page <Snippet> snippets=snippetRepository.findAll(pageable);
 
-        List<SnippetSummaryDTO> summaryList=new ArrayList<>();
+        return snippets.map(item->{
 
-        for(Snippet snippet:snippets){
-            SnippetSummaryDTO summaryDTO=new SnippetSummaryDTO();
+            SnippetSummaryDTO dto=new SnippetSummaryDTO();
 
-            summaryDTO.setId(snippet.getId());
-
-            summaryDTO.setTitle(snippet.getTitle());
-
-            summaryDTO.setLanguage(snippet.getLanguage());
-
-            summaryDTO.setDescription(snippet.getDescription());
-
-            summaryDTO.setTags(snippet.getTags());
-
-            summaryDTO.setCreatedAt(snippet.getCreatedAt());
-
-            summaryDTO.setUpdatedAt(snippet.getUpdatedAt());
-
-            //adding these item in list of summary
-            summaryList.add(summaryDTO);
-        }
-
-        return summaryList;
+            dto.setId(item.getId());
+            dto.setTitle(item.getTitle());
+            dto.setLanguage(item.getLanguage());
+            dto.setDescription(item.getDescription());
+            dto.setTags(item.getTags());
+            dto.setCreatedAt(item.getCreatedAt());
+            dto.setUpdatedAt(item.getUpdatedAt());
+            return dto;
+                });
     }
 
     @Override
