@@ -1,8 +1,10 @@
 package com.personalProject.codeVault.service;
+import com.personalProject.codeVault.dto.ShareTokenResponseDTO;
 import com.personalProject.codeVault.dto.SnippetRequestDTO;
 import com.personalProject.codeVault.dto.SnippetResponseDTO;
 import com.personalProject.codeVault.dto.SnippetSummaryDTO;
 import com.personalProject.codeVault.exception.ResourceNotFoundException;
+import com.personalProject.codeVault.exception.TokenExpiredException;
 import com.personalProject.codeVault.model.Snippet;
 import com.personalProject.codeVault.repository.SnippetRepository;
 import jakarta.transaction.Transactional;
@@ -11,8 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 
 @Transactional
@@ -21,11 +23,12 @@ import java.util.List;
 public class SnippetServiceImpl implements SnippetService {
 
     private final SnippetRepository snippetRepository;
+
     //    public SnippetServiceImpl(SnippetRepository snippetRepository) {
     //        this.snippetRepository = snippetRepository;
-    //    } use manual constructor or use @RequiredArgsConstructor
+    //    } use above manual constructor or use @RequiredArgsConstructor
 
-
+//--------------------------------------------------------------------------------------
     @Override
     public SnippetResponseDTO createSnippet(SnippetRequestDTO request) {
 
@@ -53,7 +56,7 @@ public class SnippetServiceImpl implements SnippetService {
 
         return response;
     }
-
+    //--------------------------------------------------------------------------------------
     @Override
     public SnippetResponseDTO getSnippetById(Long id) {
         Snippet snippet =snippetRepository
@@ -74,6 +77,7 @@ public class SnippetServiceImpl implements SnippetService {
 
         return response;
     }
+    //--------------------------------------------------------------------------------------
 
     @Override
     public Page<SnippetSummaryDTO> getAllSnippets(int page) {
@@ -95,6 +99,8 @@ public class SnippetServiceImpl implements SnippetService {
             return dto;
                 });
     }
+
+    //--------------------------------------------------------------------------------------
 
     @Override
     public SnippetResponseDTO updateSnippet(Long id, SnippetRequestDTO request) {
@@ -136,6 +142,8 @@ public class SnippetServiceImpl implements SnippetService {
         return response;
     }
 
+    //--------------------------------------------------------------------------------------
+
     @Override
     public void deleteSnippet(Long id) {
         Snippet snippet=snippetRepository
@@ -146,47 +154,35 @@ public class SnippetServiceImpl implements SnippetService {
         System.out.println("deleted Successfully");
     }
 
+    //--------------------------------------------------------------------------------------
 
-    public List<SnippetSummaryDTO> getByLanguage(String language){
-        List <Snippet> snippet = snippetRepository.findByLanguage(language);
+    @Override
+    public Page<SnippetSummaryDTO> getByLanguage(String language,int page){
 
-    List<SnippetSummaryDTO> responses=new ArrayList<>();
+        Pageable pageable= PageRequest.of(page,5);
 
-        for(Snippet items:snippet){
-            SnippetSummaryDTO response=new SnippetSummaryDTO();
-            response.setId(items.getId());
-            response.setTitle(items.getTitle());
-            response.setLanguage(items.getLanguage());
-            response.setDescription(items.getDescription());
-            response.setTags(items.getTags());
-            response.setCreatedAt(items.getCreatedAt());
-            response.setUpdatedAt(items.getUpdatedAt());
+        Page<Snippet> snippet = snippetRepository.findByLanguage(language,pageable);
+        return snippet.map(item->{
+            SnippetSummaryDTO dto=new SnippetSummaryDTO();
+                    dto.setId(item.getId());
+                    dto.setTitle(item.getTitle());
+                    dto.setLanguage(item.getLanguage());
+                    dto.setDescription(item.getDescription());
+                    dto.setTags(item.getTags());
+                    dto.setCreatedAt(item.getCreatedAt());
+                    dto.setUpdatedAt(item.getUpdatedAt());
+                    return dto;
+        });
 
-            responses.add(response);
-        }
-        return responses;
-//-------------------or--------------
-//        return snippetRepository.findByLanguage(language)
-//                .stream()
-//                .map(item->{
-//                    SnippetSummaryDTO dto=new SnippetSummaryDTO();
-//                    dto.setId(item.getId());
-//                    dto.setTitle(item.getTitle());
-//                    dto.setLanguage(item.getLanguage());
-//                    dto.setDescription(item.getDescription());
-//                    dto.setTags(item.getTags());
-//                    dto.setCreatedAt(item.getCreatedAt());
-//                    dto.setUpdatedAt(item.getUpdatedAt());
-//                    return dto;
-//
-//                }).toList();
     }
 
-    //----GET BY TITLE------------------------
-    public List<SnippetSummaryDTO> getByTitle(String title){
+    //----GET BY TITLE--------------------------------------------------------------------
+    @Override
+    public Page<SnippetSummaryDTO> getByTitle(String title,int page){
 
-        return snippetRepository.findByTitleContainingIgnoreCase(title)
-                .stream()
+        Pageable pageable=PageRequest.of(page,5);
+
+        return snippetRepository.findByTitleContainingIgnoreCase(title,pageable)
                 .map(item->{
                     SnippetSummaryDTO dto=new SnippetSummaryDTO();
                     dto.setId(item.getId());
@@ -197,13 +193,15 @@ public class SnippetServiceImpl implements SnippetService {
                     dto.setCreatedAt(item.getCreatedAt());
                     dto.setUpdatedAt(item.getUpdatedAt());
                     return dto;
-                }).toList();
+                });
     }
 
-    public List<SnippetSummaryDTO> getByTitleOrLanguage(String keyword){
+    //--------------------------------------------------------------------------------------
+    @Override
+    public Page<SnippetSummaryDTO> getByTitleOrLanguage(String keyword, int page){
+        Pageable pageable=PageRequest.of(page,5);
         return snippetRepository
-                .findByTitleContainingIgnoreCaseOrLanguageContainingIgnoreCase(keyword,keyword)
-                .stream()
+                .findByTitleContainingIgnoreCaseOrLanguageContainingIgnoreCase(keyword,keyword,pageable)
                 .map(item->{
                     SnippetSummaryDTO dto=new SnippetSummaryDTO();
                     dto.setId(item.getId());
@@ -214,7 +212,62 @@ public class SnippetServiceImpl implements SnippetService {
                     dto.setCreatedAt(item.getCreatedAt());
                     dto.setUpdatedAt(item.getUpdatedAt());
                     return dto;
-                }).toList();
+                });
+    }
+    //--------------------------------------------------------------------------------------
+
+    @Override
+   public ShareTokenResponseDTO generateShareToken(Long id){
+
+        ShareTokenResponseDTO shareTokenResponseDTO=new ShareTokenResponseDTO();
+
+        Snippet snippet=snippetRepository
+                .findById(id)
+                .orElseThrow(()->new ResourceNotFoundException("Cannot find snippet with the given id"));
+        //generate new token
+        String token= UUID.randomUUID().toString();
+
+        //store token
+        snippet.setShareToken(token);
+
+        //generate new expiry-valid for 10mins
+        snippet.setExpiryTime(LocalDateTime.now().plusMinutes(1));
+
+        //save snippet
+        snippetRepository.save(snippet);
+
+        //convert the snippet to ShareTokenResponseDTO
+        shareTokenResponseDTO.setToken(snippet.getShareToken());
+        shareTokenResponseDTO.setExpiresAt(snippet.getExpiryTime());
+        shareTokenResponseDTO.setUrl("http://localhost:8080/api/snippets/search/"+snippet.getShareToken());
+        return shareTokenResponseDTO;
+    }
+
+    @Override
+    public SnippetResponseDTO getSharedSnippetByToken(String token) {
+        Snippet snippet=snippetRepository.findByShareToken(token);
+
+        SnippetResponseDTO response=new SnippetResponseDTO();
+
+        LocalDateTime expiryTime=snippet.getExpiryTime();
+
+        if(LocalDateTime.now().isAfter(expiryTime)){
+            throw new TokenExpiredException("Token Has Expired");
+        }
+        else{
+            response.setId(snippet.getId());
+            response.setTitle(snippet.getTitle());
+            response.setDescription(snippet.getDescription());
+            response.setCode(snippet.getCode());
+            response.setLanguage(snippet.getLanguage());
+            response.setTags(snippet.getTags());
+            response.setShareToken(snippet.getShareToken());
+            response.setCreatedAt(snippet.getCreatedAt());
+            response.setUpdatedAt(snippet.getUpdatedAt());
+
+            return response;
+
+        }
     }
 
 

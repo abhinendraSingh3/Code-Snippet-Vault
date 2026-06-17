@@ -34,13 +34,16 @@ public class Snippet {
     @ElementCollection(fetch = FetchType.EAGER) //tags = lazy collection (default)
     private List<String> tags;
 
+    @Column(unique = true)
+    private String shareToken;
+
+    private LocalDateTime expiryTime;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
 
-    @Column(unique = true)
-    private String shareToken;
 
     @PrePersist
     public void onCreate(){

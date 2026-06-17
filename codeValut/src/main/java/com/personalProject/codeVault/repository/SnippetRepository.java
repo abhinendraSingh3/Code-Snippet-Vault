@@ -1,5 +1,7 @@
 package com.personalProject.codeVault.repository;
 import com.personalProject.codeVault.model.Snippet;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,13 +10,14 @@ import java.util.List;
 @Repository
 public interface SnippetRepository extends JpaRepository<Snippet, Long> {
     //search by title
-    List<Snippet>findByTitleContainingIgnoreCase(String title);
+    Page<Snippet>findByTitleContainingIgnoreCase(String title,Pageable pageable);
 
     //search by language
-    List<Snippet> findByLanguage(String language);
+    Page<Snippet> findByLanguage(String language, Pageable pageable);
 
     //search by tag+language
-    List<Snippet> findByTitleContainingIgnoreCaseOrLanguageContainingIgnoreCase(String language, String title);
+    Page<Snippet> findByTitleContainingIgnoreCaseOrLanguageContainingIgnoreCase(String language, String title,Pageable pageable);
 
-    //search by keyword
+    //search by token
+    Snippet findByShareToken(String token);
 }

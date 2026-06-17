@@ -1,6 +1,7 @@
     //receives HTTP requests, calls service
 
     package com.personalProject.codeVault.controller;
+    import com.personalProject.codeVault.dto.ShareTokenResponseDTO;
     import com.personalProject.codeVault.dto.SnippetRequestDTO;
     import com.personalProject.codeVault.dto.SnippetResponseDTO;
     import com.personalProject.codeVault.dto.SnippetSummaryDTO;
@@ -8,6 +9,7 @@
 
     import jakarta.validation.Valid;
     import org.springframework.data.domain.Page;
+    import org.springframework.data.repository.query.Param;
     import org.springframework.web.bind.annotation.*;
 
     import java.util.List;
@@ -52,18 +54,31 @@
         }
 
         //search by language
-
         @GetMapping("/search/language")
-        public List<SnippetSummaryDTO> getByLanguage(@RequestParam String language){
-            return snippetService.getByLanguage(language);
+        public Page<SnippetSummaryDTO> getByLanguage(@RequestParam String language,@RequestParam(defaultValue="0") int page){
+            return snippetService.getByLanguage(language,page);
         }
+
         @GetMapping("/search/title")
-        public List<SnippetSummaryDTO> getByTitle(@RequestParam String title){
-            return snippetService.getByTitle(title);
+        public Page<SnippetSummaryDTO> getByTitle(@RequestParam String title,@RequestParam(defaultValue = "0") int page){
+            return snippetService.getByTitle(title,page);
         }
 
         @GetMapping("/search")
-        public List<SnippetSummaryDTO> search(@RequestParam String keyword){
-            return snippetService.getByTitleOrLanguage(keyword);
+        public Page<SnippetSummaryDTO> search(@RequestParam String keyword,@RequestParam(defaultValue = "0") int page){
+            return snippetService.getByTitleOrLanguage(keyword,page);
         }
+
+        @GetMapping("/search/{token}")
+        public SnippetResponseDTO getSnippetByToken(@PathVariable String token){
+            return snippetService.getSharedSnippetByToken(token);
+        }
+
+        @GetMapping("/token/{id}")
+        public ShareTokenResponseDTO generateShareToken(@PathVariable Long id){
+            return snippetService.generateShareToken(id);
+        }
+
+
+
     }
