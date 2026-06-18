@@ -223,6 +223,7 @@ public class SnippetServiceImpl implements SnippetService {
     @Override
     public Page<SnippetSummaryDTO> getByTitleOrLanguage(String keyword, int page){
         Pageable pageable=PageRequest.of(page,5);
+
         return snippetRepository
                 .findByTitleContainingIgnoreCaseOrLanguageContainingIgnoreCase(keyword,keyword,pageable)
                 .map(item->{
@@ -301,17 +302,16 @@ public class SnippetServiceImpl implements SnippetService {
     }
 //-------------------------------------------------------------------------------------
 public List <SnippetVersionSummaryDTO> getSnippetsVersions(Long id){
-       List<SnippetVersion> version=snippetVersionRepository.findBySnippetId(id);
 
-       SnippetVersionSummaryDTO summaryDTO=new SnippetVersionSummaryDTO();
-       
-
-    return
-
-
-
-        return null;
+       return snippetVersionRepository
+               .findBySnippetId(id)
+               .stream()
+               .map(items->{
+           SnippetVersionSummaryDTO summaryDTO=new SnippetVersionSummaryDTO();
+           summaryDTO.setVersionNumber(items.getVersionNumber());
+           summaryDTO.setCreatedAt(items.getCreatedAt());
+           return summaryDTO;
+       }) .toList();
 }
-
 
 }

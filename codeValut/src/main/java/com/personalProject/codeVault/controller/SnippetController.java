@@ -77,7 +77,7 @@
         }
 
         @GetMapping("/{id}/versions")
-        public SnippetVersionSummaryDTO getSnippetsVersions(@PathVariable Long id){
+        public List<SnippetVersionSummaryDTO> getSnippetsVersions(@PathVariable Long id){
             return snippetService.getSnippetsVersions(id);
         }
 
