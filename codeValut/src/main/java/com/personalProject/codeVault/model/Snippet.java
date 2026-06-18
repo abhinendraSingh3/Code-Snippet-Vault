@@ -43,7 +43,8 @@ public class Snippet {
 
     private LocalDateTime updatedAt;
 
-
+    @OneToMany(mappedBy = "snippet")
+    private List<SnippetVersion> snippetVersions;
 
     @PrePersist
     public void onCreate(){

@@ -2,11 +2,10 @@
 
 package com.personalProject.codeVault.service;
 
-import com.personalProject.codeVault.dto.ShareTokenResponseDTO;
-import com.personalProject.codeVault.dto.SnippetRequestDTO;
-import com.personalProject.codeVault.dto.SnippetResponseDTO;
-import com.personalProject.codeVault.dto.SnippetSummaryDTO;
+import com.personalProject.codeVault.dto.*;
 import org.springframework.data.domain.Page;
+
+import java.util.List;
 
 public interface SnippetService {
 
@@ -30,4 +29,5 @@ public interface SnippetService {
 
     SnippetResponseDTO getSharedSnippetByToken(String token);
 
+    List<SnippetVersionSummaryDTO> getSnippetsVersions(Long id);
 }

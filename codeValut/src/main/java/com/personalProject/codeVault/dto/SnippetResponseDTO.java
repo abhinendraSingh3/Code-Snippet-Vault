@@ -5,7 +5,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,6 +23,8 @@ public class SnippetResponseDTO
     private List<String> tags;
 
     private String shareToken;
+
+    private int versions;
 
     private LocalDateTime createdAt;
 

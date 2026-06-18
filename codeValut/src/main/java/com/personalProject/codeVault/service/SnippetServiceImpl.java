@@ -1,12 +1,13 @@
 package com.personalProject.codeVault.service;
-import com.personalProject.codeVault.dto.ShareTokenResponseDTO;
-import com.personalProject.codeVault.dto.SnippetRequestDTO;
-import com.personalProject.codeVault.dto.SnippetResponseDTO;
-import com.personalProject.codeVault.dto.SnippetSummaryDTO;
+import com.personalProject.codeVault.dto.*;
+import com.personalProject.codeVault.exception.BadRequestException;
 import com.personalProject.codeVault.exception.ResourceNotFoundException;
 import com.personalProject.codeVault.exception.TokenExpiredException;
+import com.personalProject.codeVault.exception.UnauthorizedException;
 import com.personalProject.codeVault.model.Snippet;
+import com.personalProject.codeVault.model.SnippetVersion;
 import com.personalProject.codeVault.repository.SnippetRepository;
+import com.personalProject.codeVault.repository.SnippetVersionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -23,6 +25,7 @@ import java.util.UUID;
 public class SnippetServiceImpl implements SnippetService {
 
     private final SnippetRepository snippetRepository;
+    private final SnippetVersionRepository snippetVersionRepository;
 
     //    public SnippetServiceImpl(SnippetRepository snippetRepository) {
     //        this.snippetRepository = snippetRepository;
@@ -104,11 +107,30 @@ public class SnippetServiceImpl implements SnippetService {
 
     @Override
     public SnippetResponseDTO updateSnippet(Long id, SnippetRequestDTO request) {
-        
+
+        //finding the correct snippetRepository
         Snippet snippet=snippetRepository
                 .findById(id)
                 .orElseThrow(()->new RuntimeException("Snippet not found by the given id"));
-        
+
+        //saving the previously stored snippets in the snippetVersion
+        SnippetVersion snippetVersion=new SnippetVersion();
+
+        snippetVersion.setTitle(snippet.getTitle());
+        snippetVersion.setDescription(snippet.getDescription());
+        snippetVersion.setLanguage(snippet.getCode());
+        snippetVersion.setCode(snippet.getCode());
+        snippetVersion.setLanguage(snippet.getLanguage());
+        snippetVersion.setTags(snippet.getTags());
+        //set snippet version
+        snippetVersion.setVersionNumber(snippetVersion.getVersionNumber()+1);
+
+        //link version with snippet
+        snippetVersion.setSnippet(snippet);
+        //save snippet
+        snippetVersionRepository.save(snippetVersion);
+
+        //updating the snippet with the new values
         if(request.getTitle()!=null){
             snippet.setTitle(request.getTitle());
         }
@@ -138,6 +160,7 @@ public class SnippetServiceImpl implements SnippetService {
         response.setShareToken(snippet.getShareToken());
         response.setCreatedAt(snippet.getCreatedAt());
         response.setUpdatedAt(snippet.getUpdatedAt());
+        response.setVersions(snippet.getSnippetVersions().size()+1);
 
         return response;
     }
@@ -243,9 +266,12 @@ public class SnippetServiceImpl implements SnippetService {
         return shareTokenResponseDTO;
     }
 
+    //----------------------------------------------------------------------------------------------------
+
     @Override
     public SnippetResponseDTO getSharedSnippetByToken(String token) {
-        Snippet snippet=snippetRepository.findByShareToken(token);
+        Snippet snippet = snippetRepository.findByShareToken(token)
+                .orElseThrow(() -> new UnauthorizedException("Invalid Token"));
 
         SnippetResponseDTO response=new SnippetResponseDTO();
 
@@ -254,7 +280,11 @@ public class SnippetServiceImpl implements SnippetService {
         if(LocalDateTime.now().isAfter(expiryTime)){
             throw new TokenExpiredException("Token Has Expired");
         }
-        else{
+
+        else if (!token.equals(snippet.getShareToken())) {
+            throw new UnauthorizedException("Token is invalid");
+
+        } else{
             response.setId(snippet.getId());
             response.setTitle(snippet.getTitle());
             response.setDescription(snippet.getDescription());
@@ -269,7 +299,19 @@ public class SnippetServiceImpl implements SnippetService {
 
         }
     }
+//-------------------------------------------------------------------------------------
+public List <SnippetVersionSummaryDTO> getSnippetsVersions(Long id){
+       List<SnippetVersion> version=snippetVersionRepository.findBySnippetId(id);
 
+       SnippetVersionSummaryDTO summaryDTO=new SnippetVersionSummaryDTO();
+       
+
+    return
+
+
+
+        return null;
+}
 
 
 }

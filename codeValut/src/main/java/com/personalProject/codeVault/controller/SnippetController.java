@@ -1,10 +1,7 @@
     //receives HTTP requests, calls service
 
     package com.personalProject.codeVault.controller;
-    import com.personalProject.codeVault.dto.ShareTokenResponseDTO;
-    import com.personalProject.codeVault.dto.SnippetRequestDTO;
-    import com.personalProject.codeVault.dto.SnippetResponseDTO;
-    import com.personalProject.codeVault.dto.SnippetSummaryDTO;
+    import com.personalProject.codeVault.dto.*;
     import com.personalProject.codeVault.service.SnippetService;
 
     import jakarta.validation.Valid;
@@ -77,6 +74,11 @@
         @GetMapping("/token/{id}")
         public ShareTokenResponseDTO generateShareToken(@PathVariable Long id){
             return snippetService.generateShareToken(id);
+        }
+
+        @GetMapping("/{id}/versions")
+        public SnippetVersionSummaryDTO getSnippetsVersions(@PathVariable Long id){
+            return snippetService.getSnippetsVersions(id);
         }
 
 
