@@ -1,6 +1,5 @@
 package com.personalProject.codeVault.service;
 import com.personalProject.codeVault.dto.*;
-import com.personalProject.codeVault.exception.BadRequestException;
 import com.personalProject.codeVault.exception.ResourceNotFoundException;
 import com.personalProject.codeVault.exception.TokenExpiredException;
 import com.personalProject.codeVault.exception.UnauthorizedException;
@@ -77,6 +76,7 @@ public class SnippetServiceImpl implements SnippetService {
         response.setShareToken(snippet.getShareToken());
         response.setCreatedAt(snippet.getCreatedAt());
         response.setUpdatedAt(snippet.getUpdatedAt());
+        response.setVersions(snippet.getSnippetVersions().size());
 
         return response;
     }
@@ -108,48 +108,55 @@ public class SnippetServiceImpl implements SnippetService {
     @Override
     public SnippetResponseDTO updateSnippet(Long id, SnippetRequestDTO request) {
 
-        //finding the correct snippetRepository
-        Snippet snippet=snippetRepository
-                .findById(id)
-                .orElseThrow(()->new RuntimeException("Snippet not found by the given id"));
+        // Find the existing snippet
+        Snippet snippet = snippetRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Snippet not found"));
 
-        //saving the previously stored snippets in the snippetVersion
-        SnippetVersion snippetVersion=new SnippetVersion();
+        // Create a version from the current state before updating
+        SnippetVersion snippetVersion = new SnippetVersion();
 
         snippetVersion.setTitle(snippet.getTitle());
         snippetVersion.setDescription(snippet.getDescription());
-        snippetVersion.setLanguage(snippet.getCode());
         snippetVersion.setCode(snippet.getCode());
         snippetVersion.setLanguage(snippet.getLanguage());
         snippetVersion.setTags(snippet.getTags());
-        //set snippet version
-        snippetVersion.setVersionNumber(snippetVersion.getVersionNumber()+1);
 
-        //link version with snippet
+        // Set version number
+        snippetVersion.setVersionNumber(snippet.getSnippetVersions().size() + 1);
+
+        // Maintain both sides of relationship
         snippetVersion.setSnippet(snippet);
-        //save snippet
+        snippet.getSnippetVersions().add(snippetVersion);
+
+        // Save version
         snippetVersionRepository.save(snippetVersion);
 
-        //updating the snippet with the new values
-        if(request.getTitle()!=null){
+        // Update snippet with new values
+        if (request.getTitle() != null) {
             snippet.setTitle(request.getTitle());
         }
-        if(request.getDescription() !=null){
+
+        if (request.getDescription() != null) {
             snippet.setDescription(request.getDescription());
         }
-        if(request.getCode() !=null){
+
+        if (request.getCode() != null) {
             snippet.setCode(request.getCode());
         }
-        if(request.getLanguage()!=null){
+
+        if (request.getLanguage() != null) {
             snippet.setLanguage(request.getLanguage());
         }
-        if(request.getTags()!=null){
+
+        if (request.getTags() != null) {
             snippet.setTags(request.getTags());
         }
 
+        // Save updated snippet
         snippetRepository.save(snippet);
 
-        SnippetResponseDTO response=new SnippetResponseDTO();
+        // Prepare response
+        SnippetResponseDTO response = new SnippetResponseDTO();
 
         response.setId(snippet.getId());
         response.setTitle(snippet.getTitle());
@@ -160,7 +167,9 @@ public class SnippetServiceImpl implements SnippetService {
         response.setShareToken(snippet.getShareToken());
         response.setCreatedAt(snippet.getCreatedAt());
         response.setUpdatedAt(snippet.getUpdatedAt());
-        response.setVersions(snippet.getSnippetVersions().size()+1);
+
+        // Number of versions stored
+        response.setVersions(snippet.getSnippetVersions().size());
 
         return response;
     }
@@ -301,17 +310,107 @@ public class SnippetServiceImpl implements SnippetService {
         }
     }
 //-------------------------------------------------------------------------------------
-public List <SnippetVersionSummaryDTO> getSnippetsVersions(Long id){
+//    Get all versions of a snippet
+    @Override
+    public List <SnippetVersionSummaryDTO> getSnippetsVersions(Long id){
 
        return snippetVersionRepository
                .findBySnippetId(id)
                .stream()
                .map(items->{
            SnippetVersionSummaryDTO summaryDTO=new SnippetVersionSummaryDTO();
+           summaryDTO.setTitle(items.getTitle());
            summaryDTO.setVersionNumber(items.getVersionNumber());
            summaryDTO.setCreatedAt(items.getCreatedAt());
            return summaryDTO;
        }) .toList();
 }
+
+//------------------------------------------------------------------------------------------------------
+//Get a particular version
+    @Override
+   public SnippetVersionResponseDTO getSnippetByIdAndVersionNumber(Long id, int versionNumber){
+       SnippetVersion version=snippetVersionRepository.findBySnippetIdAndVersionNumber(id,versionNumber);
+
+        SnippetVersionResponseDTO versionResponseDTO=new SnippetVersionResponseDTO();
+
+        versionResponseDTO.setId(version.getId());
+        versionResponseDTO.setVersionNumber(version.getVersionNumber());
+        versionResponseDTO.setTags(version.getTags());
+        versionResponseDTO.setTitle(version.getTitle());
+        versionResponseDTO.setDescription(version.getDescription());
+        versionResponseDTO.setLanguage(version.getLanguage());
+        versionResponseDTO.setCreatedAt(version.getCreatedAt());
+//        versionResponseDTO.setSnippet(version.getSnippet());-> this causes lazy loading issue because
+        //here the command is extracting whole snippet that's why it took time, but we only want id right so we will modify it.
+        versionResponseDTO.setSnippetId(version.getSnippet().getId());
+
+        return versionResponseDTO;
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------------------
+
+    @Override
+    public SnippetResponseDTO replaceCurrentVersion(Long id, int versionNumber) {
+
+        // Get current snippet
+        Snippet snippet = snippetRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Snippet not found"));
+
+        // Get desired version
+        SnippetVersion version = snippetVersionRepository
+                .findBySnippetIdAndVersionNumber(id, versionNumber);
+
+        // Save current state as a new version
+        SnippetVersion currentVersion = new SnippetVersion();
+
+        currentVersion.setVersionNumber(snippet.getSnippetVersions().size() + 1);
+        currentVersion.setTitle(snippet.getTitle());
+        currentVersion.setDescription(snippet.getDescription());
+        currentVersion.setCode(snippet.getCode());
+        currentVersion.setLanguage(snippet.getLanguage());
+        currentVersion.setTags(snippet.getTags());
+
+        // Link to current snippet
+        currentVersion.setSnippet(snippet);
+
+        snippetVersionRepository.save(currentVersion);
+
+        // Restore the desired version into current snippet
+        snippet.setTitle(version.getTitle());
+        snippet.setDescription(version.getDescription());
+        snippet.setCode(version.getCode());
+        snippet.setLanguage(version.getLanguage());
+        snippet.setTags(version.getTags());
+
+        // Save updated snippet
+        snippetRepository.save(snippet);
+
+        // Prepare response
+        SnippetResponseDTO responseDTO = new SnippetResponseDTO();
+
+        responseDTO.setId(snippet.getId());
+        responseDTO.setTitle(snippet.getTitle());
+        responseDTO.setDescription(snippet.getDescription());
+        responseDTO.setCode(snippet.getCode());
+        responseDTO.setLanguage(snippet.getLanguage());
+        responseDTO.setTags(snippet.getTags());
+        responseDTO.setShareToken(snippet.getShareToken());
+        responseDTO.setCreatedAt(snippet.getCreatedAt());
+        responseDTO.setUpdatedAt(snippet.getUpdatedAt());
+        responseDTO.setVersions(snippet.getSnippetVersions().size());
+
+        return responseDTO;
+    }
+
+
+
+    //↓
+
+    //↓
+
+    //↓
+
 
 }

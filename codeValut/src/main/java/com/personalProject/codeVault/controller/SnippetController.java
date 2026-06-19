@@ -76,9 +76,20 @@
             return snippetService.generateShareToken(id);
         }
 
+//        Get all versions of a snippet
         @GetMapping("/{id}/versions")
         public List<SnippetVersionSummaryDTO> getSnippetsVersions(@PathVariable Long id){
             return snippetService.getSnippetsVersions(id);
+        }
+        //Get a particular version
+        @GetMapping("/{id}/versions/{versionNumber}")
+        public SnippetVersionResponseDTO getSnippetByIdAndVersionNumber(@PathVariable Long id,@PathVariable int versionNumber){
+            return snippetService.getSnippetByIdAndVersionNumber(id,versionNumber);
+        }
+        //replace current version with previous version
+        @GetMapping("/{id}/versions/{versionNumber}/restore")
+        public SnippetResponseDTO replaceCurrentVersion(@PathVariable Long id, @PathVariable int versionNumber){
+            return snippetService.replaceCurrentVersion(id,versionNumber);
         }
 
 

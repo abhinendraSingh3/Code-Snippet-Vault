@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class SnippetVersionSummaryDTO {
 
+    private String title;
     private int versionNumber;
     private LocalDateTime createdAt;
 

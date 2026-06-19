@@ -3,6 +3,7 @@
 package com.personalProject.codeVault.service;
 
 import com.personalProject.codeVault.dto.*;
+import org.hibernate.internal.util.Optional;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -29,5 +30,14 @@ public interface SnippetService {
 
     SnippetResponseDTO getSharedSnippetByToken(String token);
 
+    // Get all versions of a snippet
     List<SnippetVersionSummaryDTO> getSnippetsVersions(Long id);
+
+
+    //Get a particular version
+    SnippetVersionResponseDTO getSnippetByIdAndVersionNumber(Long id, int versionNumber);
+
+//    Restore current snippet by a previous version
+    SnippetResponseDTO replaceCurrentVersion(Long id, int versionNumber);
+
 }

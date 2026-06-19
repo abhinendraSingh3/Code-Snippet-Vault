@@ -1,16 +1,13 @@
 package com.personalProject.codeVault.model;
-
 import jakarta.persistence.*;
-import jdk.jfr.Enabled;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class SnippetVersion {
@@ -34,6 +31,11 @@ public class SnippetVersion {
 
     @Column(nullable = false)
     private String language;
+
+    @Column(unique = true)
+    private String shareToken;
+
+    private LocalDateTime expiryTime;
 
     @ElementCollection(fetch = FetchType.EAGER)
     private List<String> tags;
