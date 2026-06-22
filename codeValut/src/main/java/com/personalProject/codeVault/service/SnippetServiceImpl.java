@@ -5,15 +5,19 @@ import com.personalProject.codeVault.exception.TokenExpiredException;
 import com.personalProject.codeVault.exception.UnauthorizedException;
 import com.personalProject.codeVault.model.Snippet;
 import com.personalProject.codeVault.model.SnippetVersion;
+import com.personalProject.codeVault.model.User;
 import com.personalProject.codeVault.repository.SnippetRepository;
 import com.personalProject.codeVault.repository.SnippetVersionRepository;
+import com.personalProject.codeVault.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,6 +29,12 @@ public class SnippetServiceImpl implements SnippetService {
 
     private final SnippetRepository snippetRepository;
     private final SnippetVersionRepository snippetVersionRepository;
+    private final UserRepository userRepository;
+    SnippetResponseDTO responseDTO = new SnippetResponseDTO();
+
+    public String getCurrentUser(){
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
 
     //    public SnippetServiceImpl(SnippetRepository snippetRepository) {
     //        this.snippetRepository = snippetRepository;
@@ -34,6 +44,13 @@ public class SnippetServiceImpl implements SnippetService {
     @Override
     public SnippetResponseDTO createSnippet(SnippetRequestDTO request) {
 
+        System.out.println("reached here");
+        String username=getCurrentUser();
+        System.out.println(username);
+
+        User user=userRepository.findByUsername(username)
+                .orElseThrow(()->new ResourceNotFoundException("Cannot find the user by given username"));
+
         Snippet snippet = new Snippet();
 
         snippet.setTitle(request.getTitle());
@@ -41,26 +58,34 @@ public class SnippetServiceImpl implements SnippetService {
         snippet.setCode(request.getCode());
         snippet.setLanguage(request.getLanguage());
         snippet.setTags(request.getTags());
+        snippet.setUser(user);
 
         Snippet savedSnippet = snippetRepository.save(snippet);
 
-        SnippetResponseDTO response = new SnippetResponseDTO();
+        responseDTO.setId(savedSnippet.getId());
+        responseDTO.setTitle(savedSnippet.getTitle());
+        responseDTO.setDescription(savedSnippet.getDescription());
+        responseDTO.setCode(savedSnippet.getCode());
+        responseDTO.setLanguage(savedSnippet.getLanguage());
+        responseDTO.setTags(savedSnippet.getTags());
+        responseDTO.setShareToken(savedSnippet.getShareToken());
+        responseDTO.setCreatedAt(savedSnippet.getCreatedAt());
+        responseDTO.setUpdatedAt(savedSnippet.getUpdatedAt());
+        responseDTO.setUserName(savedSnippet.getUser().getUsername());
 
-        response.setId(savedSnippet.getId());
-        response.setTitle(savedSnippet.getTitle());
-        response.setDescription(savedSnippet.getDescription());
-        response.setCode(savedSnippet.getCode());
-        response.setLanguage(savedSnippet.getLanguage());
-        response.setTags(savedSnippet.getTags());
-        response.setShareToken(savedSnippet.getShareToken());
-        response.setCreatedAt(savedSnippet.getCreatedAt());
-        response.setUpdatedAt(savedSnippet.getUpdatedAt());
-
-        return response;
+        return responseDTO;
     }
+
     //--------------------------------------------------------------------------------------
     @Override
     public SnippetResponseDTO getSnippetById(Long id) {
+
+        String username=getCurrentUser();
+
+        User user=userRepository.findByUsername(username).orElseThrow(()->new ResourceNotFoundException("User not found"));
+
+
+
         Snippet snippet =snippetRepository
                 .findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Snippet not found by given id"));
@@ -86,7 +111,14 @@ public class SnippetServiceImpl implements SnippetService {
     public Page<SnippetSummaryDTO> getAllSnippets(int page) {
         Pageable pageable= PageRequest.of(page,5);
 
-        Page <Snippet> snippets=snippetRepository.findAll(pageable);
+        String userName=getCurrentUser();//this we are getting from token;
+
+        User user=userRepository.findByUsername(userName)
+                .orElseThrow(()->new ResourceNotFoundException("Resource cannot be find by the userName"));
+
+
+
+        Page <Snippet> snippets=snippetRepository.findByUser(pageable,user);
 
         return snippets.map(item->{
 
@@ -370,7 +402,7 @@ public class SnippetServiceImpl implements SnippetService {
         currentVersion.setDescription(snippet.getDescription());
         currentVersion.setCode(snippet.getCode());
         currentVersion.setLanguage(snippet.getLanguage());
-        currentVersion.setTags(snippet.getTags());
+        currentVersion.setTags(new ArrayList<>(snippet.getTags()));
 
         // Link to current snippet
         currentVersion.setSnippet(snippet);
@@ -382,20 +414,18 @@ public class SnippetServiceImpl implements SnippetService {
         snippet.setDescription(version.getDescription());
         snippet.setCode(version.getCode());
         snippet.setLanguage(version.getLanguage());
-        snippet.setTags(version.getTags());
+        snippet.setTags(new ArrayList<>(snippet.getTags()));
 
         // Save updated snippet
         snippetRepository.save(snippet);
 
-        // Prepare response
-        SnippetResponseDTO responseDTO = new SnippetResponseDTO();
 
         responseDTO.setId(snippet.getId());
         responseDTO.setTitle(snippet.getTitle());
         responseDTO.setDescription(snippet.getDescription());
         responseDTO.setCode(snippet.getCode());
         responseDTO.setLanguage(snippet.getLanguage());
-        responseDTO.setTags(snippet.getTags());
+        responseDTO.setTags(new ArrayList<>(snippet.getTags()));
         responseDTO.setShareToken(snippet.getShareToken());
         responseDTO.setCreatedAt(snippet.getCreatedAt());
         responseDTO.setUpdatedAt(snippet.getUpdatedAt());

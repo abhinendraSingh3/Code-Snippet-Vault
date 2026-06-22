@@ -1,6 +1,8 @@
 package com.personalProject.codeVault.repository;
 import com.personalProject.codeVault.model.Snippet;
 import java.util.Optional;
+
+import com.personalProject.codeVault.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,4 +23,6 @@ public interface SnippetRepository extends JpaRepository<Snippet, Long> {
 
     //search by token
     Optional<Snippet> findByShareToken(String token);
+
+   Page<Snippet> findByUser(Pageable pageable, User user);
 }

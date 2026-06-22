@@ -5,12 +5,11 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.validator.constraints.UniqueElements;
 
 @Data
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class UserRequestDTO {
+public class UserSignupRequestDTO {
 
 
     @Column(unique = true)

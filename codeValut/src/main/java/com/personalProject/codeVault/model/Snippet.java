@@ -1,10 +1,8 @@
 package com.personalProject.codeVault.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -45,6 +43,10 @@ public class Snippet {
 
     @OneToMany(mappedBy = "snippet")
     private List<SnippetVersion> snippetVersions;
+
+    @ManyToOne
+    @JoinColumn(name = "userId")
+    private User user;
 
     @PrePersist
     public void onCreate(){

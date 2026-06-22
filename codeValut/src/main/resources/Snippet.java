@@ -3,7 +3,7 @@ package com.personalProject.codeVault.model;
 import jakarta.persistence.*;
 import java.util.List;
 
-@Entity
+@User
 public class Snippet {
 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
