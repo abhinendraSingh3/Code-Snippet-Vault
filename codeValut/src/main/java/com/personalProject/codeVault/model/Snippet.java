@@ -45,7 +45,7 @@ public class Snippet {
     private List<SnippetVersion> snippetVersions;
 
     @ManyToOne
-    @JoinColumn(name = "userId")
+    @JoinColumn(name = "userId",nullable = false)
     private User user;
 
     @PrePersist

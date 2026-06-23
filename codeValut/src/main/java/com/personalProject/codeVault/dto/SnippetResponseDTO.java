@@ -26,8 +26,6 @@ public class SnippetResponseDTO
 
     private int versions;
 
-    private String userName;
-
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

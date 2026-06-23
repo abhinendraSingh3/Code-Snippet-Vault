@@ -33,7 +33,6 @@ public interface SnippetService {
     // Get all versions of a snippet
     List<SnippetVersionSummaryDTO> getSnippetsVersions(Long id);
 
-
     //Get a particular version
     SnippetVersionResponseDTO getSnippetByIdAndVersionNumber(Long id, int versionNumber);
 

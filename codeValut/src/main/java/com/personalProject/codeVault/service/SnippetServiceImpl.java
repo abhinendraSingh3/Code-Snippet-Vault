@@ -10,6 +10,7 @@ import com.personalProject.codeVault.repository.SnippetRepository;
 import com.personalProject.codeVault.repository.SnippetVersionRepository;
 import com.personalProject.codeVault.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +21,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 
 @Transactional
 @Service
@@ -71,7 +71,6 @@ public class SnippetServiceImpl implements SnippetService {
         responseDTO.setShareToken(savedSnippet.getShareToken());
         responseDTO.setCreatedAt(savedSnippet.getCreatedAt());
         responseDTO.setUpdatedAt(savedSnippet.getUpdatedAt());
-        responseDTO.setUserName(savedSnippet.getUser().getUsername());
 
         return responseDTO;
     }
@@ -84,11 +83,13 @@ public class SnippetServiceImpl implements SnippetService {
 
         User user=userRepository.findByUsername(username).orElseThrow(()->new ResourceNotFoundException("User not found"));
 
-
-
         Snippet snippet =snippetRepository
                 .findById(id)
                 .orElseThrow(()->new ResourceNotFoundException("Snippet not found by given id"));
+
+        if(snippet.getUser().getId()!=user.getId()){
+            throw new UnauthorizedException("You are not allowed to visit this snippet");
+        }
 
         SnippetResponseDTO response=new SnippetResponseDTO();
 
@@ -140,9 +141,12 @@ public class SnippetServiceImpl implements SnippetService {
     @Override
     public SnippetResponseDTO updateSnippet(Long id, SnippetRequestDTO request) {
 
+        String userName=getCurrentUser();
+        User user= userRepository.findByUsername(userName).orElseThrow(()->new ResourceNotFoundException("Cant find the user"));
+
         // Find the existing snippet
-        Snippet snippet = snippetRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Snippet not found"));
+        Snippet snippet = snippetRepository.findByIdAndUser(id,user).orElseThrow(()->new ResourceNotFoundException("Cant find snippet with the given id or user"));
+
 
         // Create a version from the current state before updating
         SnippetVersion snippetVersion = new SnippetVersion();
@@ -151,7 +155,7 @@ public class SnippetServiceImpl implements SnippetService {
         snippetVersion.setDescription(snippet.getDescription());
         snippetVersion.setCode(snippet.getCode());
         snippetVersion.setLanguage(snippet.getLanguage());
-        snippetVersion.setTags(snippet.getTags());
+        snippetVersion.setTags(new ArrayList<>(snippet.getTags()));
 
         // Set version number
         snippetVersion.setVersionNumber(snippet.getSnippetVersions().size() + 1);
@@ -195,7 +199,7 @@ public class SnippetServiceImpl implements SnippetService {
         response.setDescription(snippet.getDescription());
         response.setCode(snippet.getCode());
         response.setLanguage(snippet.getLanguage());
-        response.setTags(snippet.getTags());
+        response.setTags(new ArrayList<>(snippet.getTags()));
         response.setShareToken(snippet.getShareToken());
         response.setCreatedAt(snippet.getCreatedAt());
         response.setUpdatedAt(snippet.getUpdatedAt());
@@ -210,9 +214,13 @@ public class SnippetServiceImpl implements SnippetService {
 
     @Override
     public void deleteSnippet(Long id) {
-        Snippet snippet=snippetRepository
-                .findById(id)
-                .orElseThrow(()->new RuntimeException("Snippet not found by the given id"));
+
+        String userName=getCurrentUser();
+        User user= userRepository.findByUsername(userName).orElseThrow(()->new ResourceNotFoundException("Cant find the user"));
+
+        // Find the existing snippet
+        Snippet snippet = snippetRepository.findByIdAndUser(id,user).orElseThrow(()->new ResourceNotFoundException("Cant find snippet with the given id or user"));
+
         System.out.println("snippet found by given id"+snippet+"now proceeding to delete");
         snippetRepository.deleteById(id);
         System.out.println("deleted Successfully");
@@ -225,7 +233,11 @@ public class SnippetServiceImpl implements SnippetService {
 
         Pageable pageable= PageRequest.of(page,5);
 
-        Page<Snippet> snippet = snippetRepository.findByLanguage(language,pageable);
+        String userName=getCurrentUser();
+
+        User user= userRepository.findByUsername(userName).orElseThrow(()->new ResourceNotFoundException("Cant find the user"));
+
+        Page<Snippet> snippet = snippetRepository.findByLanguageAndUser(language,user,pageable);
         return snippet.map(item->{
             SnippetSummaryDTO dto=new SnippetSummaryDTO();
                     dto.setId(item.getId());
@@ -244,16 +256,21 @@ public class SnippetServiceImpl implements SnippetService {
     @Override
     public Page<SnippetSummaryDTO> getByTitle(String title,int page){
 
+
+        String userName=getCurrentUser();
+
+        User user= userRepository.findByUsername(userName).orElseThrow(()->new ResourceNotFoundException("Cant find the user"));
+
         Pageable pageable=PageRequest.of(page,5);
 
-        return snippetRepository.findByTitleContainingIgnoreCase(title,pageable)
+        return snippetRepository.findByUserAndTitleContainingIgnoreCase(user,title,pageable)
                 .map(item->{
                     SnippetSummaryDTO dto=new SnippetSummaryDTO();
                     dto.setId(item.getId());
                     dto.setTitle(item.getTitle());
                     dto.setLanguage(item.getLanguage());
                     dto.setDescription(item.getDescription());
-                    dto.setTags(item.getTags());
+                    dto.setTags(new ArrayList<>(item.getTags()));
                     dto.setCreatedAt(item.getCreatedAt());
                     dto.setUpdatedAt(item.getUpdatedAt());
                     return dto;
@@ -263,10 +280,17 @@ public class SnippetServiceImpl implements SnippetService {
     //--------------------------------------------------------------------------------------
     @Override
     public Page<SnippetSummaryDTO> getByTitleOrLanguage(String keyword, int page){
+
         Pageable pageable=PageRequest.of(page,5);
 
+    String userName=getCurrentUser();
+
+    User user=userRepository.findByUsername(userName).orElseThrow(()->new ResourceNotFoundException("User cant be found"));
+
+
+
         return snippetRepository
-                .findByTitleContainingIgnoreCaseOrLanguageContainingIgnoreCase(keyword,keyword,pageable)
+                .findByUserAndTitleContainingIgnoreCaseOrLanguageContainingIgnoreCase(user,keyword,keyword,pageable)
                 .map(item->{
                     SnippetSummaryDTO dto=new SnippetSummaryDTO();
                     dto.setId(item.getId());
@@ -284,10 +308,14 @@ public class SnippetServiceImpl implements SnippetService {
     @Override
    public ShareTokenResponseDTO generateShareToken(Long id){
 
+        String userName=getCurrentUser();
+
+        User user=userRepository.findByUsername(userName).orElseThrow(()->new ResourceNotFoundException("User cant be found"));
+
         ShareTokenResponseDTO shareTokenResponseDTO=new ShareTokenResponseDTO();
 
         Snippet snippet=snippetRepository
-                .findById(id)
+                .findByIdAndUser(id,user)
                 .orElseThrow(()->new ResourceNotFoundException("Cannot find snippet with the given id"));
         //generate new token
         String token= UUID.randomUUID().toString();
@@ -309,9 +337,9 @@ public class SnippetServiceImpl implements SnippetService {
     }
 
     //----------------------------------------------------------------------------------------------------
-
     @Override
     public SnippetResponseDTO getSharedSnippetByToken(String token) {
+
         Snippet snippet = snippetRepository.findByShareToken(token)
                 .orElseThrow(() -> new UnauthorizedException("Invalid Token"));
 
@@ -381,12 +409,15 @@ public class SnippetServiceImpl implements SnippetService {
     }
 
     //----------------------------------------------------------------------------------------------------------------------------------
-
     @Override
     public SnippetResponseDTO replaceCurrentVersion(Long id, int versionNumber) {
 
+        String userName=getCurrentUser();
+
+        User user=userRepository.findByUsername(userName).orElseThrow(()->new ResourceNotFoundException("User cant be found"));
+
         // Get current snippet
-        Snippet snippet = snippetRepository.findById(id)
+        Snippet snippet = snippetRepository.findByIdAndUser(id,user)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Snippet not found"));
 
@@ -419,7 +450,6 @@ public class SnippetServiceImpl implements SnippetService {
         // Save updated snippet
         snippetRepository.save(snippet);
 
-
         responseDTO.setId(snippet.getId());
         responseDTO.setTitle(snippet.getTitle());
         responseDTO.setDescription(snippet.getDescription());
@@ -433,14 +463,5 @@ public class SnippetServiceImpl implements SnippetService {
 
         return responseDTO;
     }
-
-
-
-    //↓
-
-    //↓
-
-    //↓
-
 
 }
