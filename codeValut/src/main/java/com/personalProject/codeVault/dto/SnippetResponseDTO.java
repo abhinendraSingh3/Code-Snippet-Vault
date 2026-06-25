@@ -2,13 +2,15 @@ package com.personalProject.codeVault.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SnippetResponseDTO
+public class SnippetResponseDTO implements Serializable
 {
     private Long id;
 

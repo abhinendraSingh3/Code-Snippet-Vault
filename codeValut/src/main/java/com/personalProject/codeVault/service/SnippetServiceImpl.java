@@ -12,6 +12,8 @@ import com.personalProject.codeVault.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
@@ -76,6 +78,7 @@ public class SnippetServiceImpl implements SnippetService {
     }
 
     //--------------------------------------------------------------------------------------
+    @Cacheable(value = "Snippet", key="#id")
     @Override
     public SnippetResponseDTO getSnippetById(Long id) {
 
@@ -98,7 +101,7 @@ public class SnippetServiceImpl implements SnippetService {
         response.setDescription(snippet.getDescription());
         response.setCode(snippet.getCode());
         response.setLanguage(snippet.getLanguage());
-        response.setTags(snippet.getTags());
+        response.setTags(new ArrayList<>(snippet.getTags()));
         response.setShareToken(snippet.getShareToken());
         response.setCreatedAt(snippet.getCreatedAt());
         response.setUpdatedAt(snippet.getUpdatedAt());
@@ -139,6 +142,7 @@ public class SnippetServiceImpl implements SnippetService {
     //--------------------------------------------------------------------------------------
 
     @Override
+    @CacheEvict(value="snippet",key="#id")
     public SnippetResponseDTO updateSnippet(Long id, SnippetRequestDTO request) {
 
         String userName=getCurrentUser();
@@ -185,7 +189,7 @@ public class SnippetServiceImpl implements SnippetService {
         }
 
         if (request.getTags() != null) {
-            snippet.setTags(request.getTags());
+            snippet.setTags(new ArrayList<>(request.getTags()));
         }
 
         // Save updated snippet
@@ -286,8 +290,6 @@ public class SnippetServiceImpl implements SnippetService {
     String userName=getCurrentUser();
 
     User user=userRepository.findByUsername(userName).orElseThrow(()->new ResourceNotFoundException("User cant be found"));
-
-
 
         return snippetRepository
                 .findByUserAndTitleContainingIgnoreCaseOrLanguageContainingIgnoreCase(user,keyword,keyword,pageable)

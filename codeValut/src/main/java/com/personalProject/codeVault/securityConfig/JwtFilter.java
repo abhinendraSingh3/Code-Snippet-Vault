@@ -23,7 +23,7 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         //get authentication header
         String authHeader=request.getHeader("Authorization");
-        System.out.println("gotten authHeader " +authHeader);
+//        System.out.println("gotten authHeader " +authHeader);
 
         // 2. If no token, just skip — let Spring handle it (will deny access)
         if(authHeader==null || !authHeader.startsWith("Bearer ")){
@@ -33,7 +33,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         // 3. Extract the token
         String token=authHeader.substring(7);
-        System.out.println("token "+token);
+//        System.out.println("token "+token);
 
         // 4. Verify and put user on whiteboard
         if(jwtService.isTokenValid(token)){
