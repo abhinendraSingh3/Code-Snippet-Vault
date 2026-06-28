@@ -326,7 +326,7 @@ public class SnippetServiceImpl implements SnippetService {
         snippet.setShareToken(token);
 
         //generate new expiry-valid for 10mins
-        snippet.setExpiryTime(LocalDateTime.now().plusMinutes(1));
+        snippet.setExpiryTime(LocalDateTime.now().plusMinutes(10));
 
         //save snippet
         snippetRepository.save(snippet);
