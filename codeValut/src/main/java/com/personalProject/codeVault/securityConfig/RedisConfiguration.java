@@ -34,15 +34,15 @@ public class RedisConfiguration {
     }
 
     // --- Bean 2: RedisTemplate for manual token storage ---
-    @Bean
-    public RedisTemplate<String,String> redisTemplate(RedisConnectionFactory connectionFactory){
-        RedisTemplate<String,String> template=new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        // Plain string serialization — easy to inspect in valkey-cli
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new StringRedisSerializer());
-        return template;
-    }
+//    @Bean
+//    public RedisTemplate<String,String> redisTemplate(RedisConnectionFactory connectionFactory){
+//        RedisTemplate<String,String> template=new RedisTemplate<>();
+//        template.setConnectionFactory(connectionFactory);
+//        // Plain string serialization — easy to inspect in valkey-cli
+//        template.setKeySerializer(new StringRedisSerializer());
+//        template.setValueSerializer(new StringRedisSerializer());
+//        return template;
+//    }
 
 
 }
